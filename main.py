@@ -112,5 +112,39 @@ def username_available():
         return jsonify({"available": True, "message": "Username is available"}), 200
 
 
+# Location List API
+@app.route('/location-list', methods=['GET'])
+def location_list():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("select distinct(place) from halts")
+    locationList = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({"locationList": locationList}), 200
+
+
+# Get routes from origin to destination API
+@app.route('/get-routes-origin-to-destination', methods=['GET'])
+def get_routes_origin_to_destination():
+    origin = request.args.get('origin')
+    destination = request.args.get('destination')
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT DISTINCT h1.route_no FROM halts h1 JOIN halts h2 ON h1.route_no = h2.route_no WHERE h1.place = %s AND h2.place = %s", (origin, destination))
+    routes = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    if routes:
+        return jsonify({"available": True, "routes": routes}), 200
+    else:
+        return jsonify({"available": False, "routes": []}), 200
+    
+
 if __name__ == '__main__':
     app.run(debug=True)
